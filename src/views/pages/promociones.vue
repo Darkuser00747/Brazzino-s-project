@@ -1,5 +1,5 @@
 <template>
-  <div class="catalog-page">
+  <div class="promotions-page">
     <!-- Fondo animado -->
     <div class="background-overlay"></div>
     
@@ -13,10 +13,10 @@
               <span class="nav-icon">🏠</span>
               Inicio
             </router-link>
-            <a href='/promociones' class="nav-link">
-              <span class="nav-icon">🎯</span>
-              Promociones
-            </a>
+            <router-link to="/catalogo" class="nav-link">
+              <span class="nav-icon">📋</span>
+              Catálogo
+            </router-link>
             <a href='#politica' class="nav-link">
               <span class="nav-icon">📋</span>
               Política
@@ -48,23 +48,23 @@
       </div>
     </nav>
 
-    <!-- Header del catálogo -->
-    <div class="catalog-header">
+    <!-- Header de promociones -->
+    <div class="promotions-header">
       <div class="header-content">
-        <h1 class="page-title">🍾 Catálogo Premium</h1>
-        <p class="page-subtitle">Descubre nuestra selección exclusiva de bebidas de alta calidad</p>
+        <h1 class="page-title">🎯 Promociones Especiales</h1>
+        <p class="page-subtitle">Aprovecha nuestras ofertas exclusivas y ahorra en tus bebidas favoritas</p>
         <div class="title-underline"></div>
       </div>
     </div>
 
-    <!-- Filtros y búsqueda -->
+    <!-- Filtros y búsqueda (similar a catálogo) -->
     <div class="filters-section" ref="filtersSection">
       <div class="filters-container">
         <div class="search-bar">
           <input 
             v-model="searchQuery" 
             type="text" 
-            placeholder="Buscar productos..." 
+            placeholder="Buscar promociones..." 
             class="search-input"
           >
           <span class="search-icon">🔍</span>
@@ -85,7 +85,7 @@
           <select v-model="sortBy" class="sort-select">
             <option value="name">Ordenar por Nombre</option>
             <option value="price">Ordenar por Precio</option>
-            <option value="category">Ordenar por Categoría</option>
+            <option value="discount">Ordenar por Descuento</option>
           </select>
         </div>
         
@@ -159,7 +159,7 @@
       <div class="pagination-info">
         <span class="results-info">
           Mostrando {{ startIndex + 1 }}-{{ Math.min(startIndex + itemsPerPage, filteredProducts.length) }} 
-          de {{ filteredProducts.length }} productos
+          de {{ filteredProducts.length }} promociones
         </span>
         <div class="items-per-page">
           <label for="itemsSelect">Productos por página:</label>
@@ -207,11 +207,11 @@
       </div>
     </div>
 
-    <!-- Grid de productos -->
+    <!-- Grid de productos en promoción -->
     <div class="products-section" ref="productsSection">
       <div class="products-container">
         <div v-if="filteredProducts.length === 0" class="no-products">
-          <h3>No se encontraron productos</h3>
+          <h3>No se encontraron promociones</h3>
           <p>Intenta ajustar tus filtros de búsqueda</p>
         </div>
         
@@ -272,92 +272,87 @@
     </div>
 
     <!-- Controles de paginación inferiores -->
-    <div v-if="totalPages > 1" class="pagination-bottom">
-      <div class="pagination-controls">
-        <button 
-          @click="goToFirstPage" 
-          :disabled="currentPage === 1"
-          class="pagination-btn"
-          title="Primera página"
+    <div v-if="totalPages > 1" class="pagination-controls bottom">
+      <button 
+        @click="goToFirstPage" 
+        :disabled="currentPage === 1"
+        class="pagination-btn"
+        title="Primera página"
+      >
+        <span>⏮️</span>
+      </button>
+      
+      <button 
+        @click="previousPage" 
+        :disabled="currentPage === 1"
+        class="pagination-btn"
+        title="Página anterior"
+      >
+        <span>⬅️</span>
+      </button>
+      
+      <div class="page-numbers">
+        <button
+          v-for="page in visiblePages"
+          :key="page"
+          @click="goToPage(page)"
+          :class="['page-number', { active: currentPage === page }]"
+          :disabled="page === '...'"
         >
-          <span>⏮️</span>
-        </button>
-        
-        <button 
-          @click="previousPage" 
-          :disabled="currentPage === 1"
-          class="pagination-btn"
-          title="Página anterior"
-        >
-          <span>⬅️</span>
-        </button>
-        
-        <div class="page-numbers">
-          <button
-            v-for="page in visiblePages"
-            :key="page"
-            @click="goToPage(page)"
-            :class="['page-number', { active: currentPage === page }]"
-            :disabled="page === '...'"
-          >
-            {{ page }}
-          </button>
-        </div>
-        
-        <button 
-          @click="nextPage" 
-          :disabled="currentPage === totalPages"
-          class="pagination-btn"
-          title="Página siguiente"
-        >
-          <span>➡️</span>
-        </button>
-        
-        <button 
-          @click="goToLastPage" 
-          :disabled="currentPage === totalPages"
-          class="pagination-btn"
-          title="Última página"
-        >
-          <span>⏭️</span>
+          {{ page }}
         </button>
       </div>
+      
+      <button 
+        @click="nextPage" 
+        :disabled="currentPage === totalPages"
+        class="pagination-btn"
+        title="Página siguiente"
+      >
+        <span>➡️</span>
+      </button>
+      
+      <button 
+        @click="goToLastPage" 
+        :disabled="currentPage === totalPages"
+        class="pagination-btn"
+        title="Última página"
+      >
+        <span>⏭️</span>
+      </button>
     </div>
 
-    <!-- Modal de detalle del producto -->
+    <!-- Modal de detalle de producto -->
     <div v-if="selectedProduct" class="product-modal-overlay" @click="closeProductDetail">
       <div class="product-modal" @click.stop>
-        <button @click="closeProductDetail" class="modal-close">×</button>
+        <button class="modal-close" @click="closeProductDetail">×</button>
         <div class="modal-content">
           <div class="modal-image">
             <img :src="selectedProduct.src" :alt="selectedProduct.titulo">
           </div>
           <div class="modal-info">
-            <div class="product-category">{{ selectedProduct.categoria }}</div>
+            <div class="modal-category">{{ selectedProduct.categoria }}</div>
             <h2>{{ selectedProduct.titulo }}</h2>
-            <div class="product-rating">
+            <p class="modal-description">{{ selectedProduct.descripcion }}</p>
+            <div class="modal-rating">
               <div class="stars">
                 <span v-for="star in 5" :key="star" :class="['star', { filled: star <= selectedProduct.rating }]">⭐</span>
               </div>
-              <span class="rating-text">({{ selectedProduct.reviews }} reseñas)</span>
+              <span>({{ selectedProduct.reviews }} reseñas)</span>
             </div>
-            <p class="modal-description">{{ selectedProduct.descripcionLarga || selectedProduct.descripcion }}</p>
-            
+            <div class="modal-price">
+              <span v-if="selectedProduct.precioOriginal" class="original-price">{{ selectedProduct.precioOriginal }}</span>
+              <span class="current-price">{{ selectedProduct.precio }}</span>
+              <span v-if="selectedProduct.descuento" class="discount-tag">Ahorra {{ selectedProduct.descuento }}%</span>
+            </div>
             <div v-if="isAuthenticated" class="modal-actions">
-              <div class="modal-price">
-                <span v-if="selectedProduct.precioOriginal" class="original-price">{{ selectedProduct.precioOriginal }}</span>
-                <span class="current-price">{{ selectedProduct.precio }}</span>
-              </div>
-              <button class="modal-add-to-cart" @click="addToCart(selectedProduct)">
-                <span class="cart-icon">🛒</span>
-                Agregar al Carrito
+              <button @click="addToCart(selectedProduct)" class="modal-add-to-cart">
+                <span>🛒</span> Agregar al Carrito
               </button>
             </div>
-            
             <div v-else class="modal-login-prompt">
-              <router-link to="/login" class="modal-login-btn">
-                <span class="lock-icon">🔒</span>
-                Inicia sesión para comprar
+              <router-link to="/login" class="modal-login-btn" @click="closeProductDetail">
+                <span>🔑</span> Inicia sesión para comprar
               </router-link>
             </div>
           </div>
@@ -371,7 +366,6 @@
         <div class="footer-header">
           <h2 class="footer-title">📞 Contáctanos</h2>
         </div>
-        
         <div class="contact-grid">
           <div class="contact-item">
             <div class="contact-icon">📍</div>
@@ -399,165 +393,78 @@
         </div>
       </div>
     </footer>
+    
+    <!-- Notificación elaborada -->
+    <transition name="notification-slide">
+      <div v-if="showNotification" class="notification">
+        <div class="notification-content">
+          <span class="notification-icon">✅</span>
+          <p class="notification-message">{{ notificationMessage }}</p>
+          <button class="notification-close" @click="showNotification = false">&times;</button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 
-const route = useRoute()
 const router = useRouter()
 
-// Referencias a elementos del DOM
-const filtersSection = ref(null)
-const productsSection = ref(null)
-
-// Estado de autenticación
-const isAuthenticated = ref(false)
-const userName = ref('')
-
-// Estado del carrito
-const cart = ref([])
-const showCartModal = ref(false)
-
-// Estado de filtros y búsqueda
-const searchQuery = ref('')
-const selectedCategory = ref('Todos')
-const sortBy = ref('name')
-
-// Estado de paginación
-const currentPage = ref(1)
-const itemsPerPage = ref(9)
-const showScrollToTop = ref(false)
-
-// Estado del modal de producto
-const selectedProduct = ref(null)
-
-// Categorías disponibles
-const categories = ['Todos', 'Vodka', 'Whisky', 'Champagne', 'Rum', 'Gin', 'Tequila']
-
-// Catálogo completo de productos (mismo que el original)
-const productos = [
+const products = ref([
+  // Añadir productos con descuentos
   {
     src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS4sJIOk7YAVvCtg_lR47hL-AWJWmxCeIXreQ&s",
     alt: "Vodka Premium",
-    titulo: "Vodka Premium Absolut",
+    titulo: "Vodka Premium",
+    descripcion: "Sabor neutro y suave. Perfecto para cócteles premium.",
     categoria: "Vodka",
-    descripcion: "Tiene un sabor neutro y suave, aunque algunas variedades pueden tener un sabor ligeramente dulce o herbal.",
-    descripcionLarga: "Vodka premium destilado cinco veces con agua pura de Suecia. Su sabor excepcional y suavidad incomparable lo convierte en la elección perfecta para los conocedores más exigentes.",
+    rating: 4.5,
+    reviews: 128,
     precio: "$85,000",
     precioOriginal: "$100,000",
-    descuento: 15,
-    rating: 4.5,
-    reviews: 127
+    descuento: 15
   },
   {
     src: "https://muttsmousers.ca/media/catalog/product/cache/6ab565c3c7e8d6f3f386bd0dc87c9acc/d/o/dog_perignon_gift_set2_grande2.jpg",
     alt: "Dom Pérignon",
-    titulo: "Dom Pérignon Vintage",
+    titulo: "Dom Pérignon",
+    descripcion: "Champagne de lujo de la región de Champagne, Francia.",
     categoria: "Champagne",
-    descripcion: "Se produce a partir de una selección de las mejores uvas de la región de Champagne, Francia.",
-    descripcionLarga: "El champagne más prestigioso del mundo. Dom Pérignon Vintage es elaborado únicamente en años excepcionales con las mejores uvas Chardonnay y Pinot Noir de la región de Champagne.",
-    precio: "$450,000",
     rating: 5,
-    reviews: 89
+    reviews: 89,
+    precio: "$450,000",
+    precioOriginal: "$500,000",
+    descuento: 10
   },
-  {
-    src: "https://static.wixstatic.com/media/477dc5_b15de143c3884b26843471907ffe9fc8~mv2.png/v1/fill/w_560,h_560,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/477dc5_b15de143c3884b26843471907ffe9fc8~mv2.png",
-    alt: "Buchanan's 12",
-    titulo: "Buchanan's 12 Años",
-    categoria: "Whisky",
-    descripcion: "Whisky escocés de mezcla premium envejecido durante 12 años.",
-    descripcionLarga: "Un whisky escocés de mezcla excepcional, elaborado con whiskies cuidadosamente seleccionados y envejecidos durante un mínimo de 12 años. Notas de miel, vainilla y frutas secas.",
-    precio: "$120,000",
-    precioOriginal: "$140,000",
-    descuento: 14,
-    rating: 4.3,
-    reviews: 203
-  },
-  {
-    src: "https://lacaretalicores.com/cdn/shop/files/WhatsAppImage2024-05-21at4.36.34PM.jpg?v=1716330847",
-    alt: "Buchanan's 18",
-    titulo: "Buchanan's 18 Años",
-    categoria: "Whisky",
-    descripcion: "Whisky escocés premium con 18 años de envejecimiento.",
-    descripcionLarga: "La expresión más refinada de Buchanan's. Envejecido durante 18 años, ofrece una complejidad excepcional con notas de chocolate, especias y roble tostado.",
-    precio: "$180,000",
-    rating: 4.7,
-    reviews: 156
-  },
-  {
-    src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrGHqUOp7T6RnH0kh9r7_8yXFhVp6YQX9oJw&s",
-    alt: "Ron Zacapa",
-    titulo: "Ron Zacapa Centenario 23",
-    categoria: "Rum",
-    descripcion: "Ron guatemalteco premium envejecido 23 años en las montañas.",
-    descripcionLarga: "Un ron excepcional de Guatemala, envejecido a 2300 metros sobre el nivel del mar. Su sistema solera le otorga una complejidad única con notas de caramelo, chocolate y especias.",
-    precio: "$220,000",
-    precioOriginal: "$250,000",
-    descuento: 12,
-    rating: 4.8,
-    reviews: 98
-  },
-  {
-    src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxvEHKuHJBHDKzU9XzwQ8wHLN8m7_zFj8Qhw&s",
-    alt: "Hendrick's Gin",
-    titulo: "Hendrick's Gin",
-    categoria: "Gin",
-    descripcion: "Gin premium escocés con pepino y pétalos de rosa.",
-    descripcionLarga: "Un gin extraordinario destilado con una infusión única de pepino y pétalos de rosa. Su sabor distintivo y refrescante lo convierte en la elección perfecta para cócteles sofisticados.",
-    precio: "$95,000",
-    rating: 4.4,
-    reviews: 167
-  },
-  {
-    src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5mzBx4nNHp8vO6L2qP3cWgK9xY5tQ7nX2Zw&s",
-    alt: "Tequila Don Julio",
-    titulo: "Don Julio 1942",
-    categoria: "Tequila",
-    descripcion: "Tequila añejo premium mexicano de agave 100% azul.",
-    descripcionLarga: "Un tequila añejo excepcional, elaborado con agave azul 100% y añejado en barricas de roble. Su sabor suave y complejo celebra la tradición tequilera mexicana.",
-    precio: "$320,000",
-    precioOriginal: "$380,000",
-    descuento: 16,
-    rating: 4.9,
-    reviews: 134
-  },
-  {
-    src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnB7x4QvN3wGzLmD8kE5fH2tO9pK6rJ8xYvw&s",
-    alt: "Grey Goose",
-    titulo: "Grey Goose Vodka",
-    categoria: "Vodka",
-    descripcion: "Vodka francés premium destilado en Cognac.",
-    descripcionLarga: "Vodka super premium francés destilado en la región de Cognac con trigo suave francés. Su pureza excepcional y suavidad refinada definen el estándar del vodka de lujo.",
-    precio: "$110,000",
-    rating: 4.6,
-    reviews: 198
-  },
-  {
-    src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS8vLKmH6wN4pQ2xD9rE7fG3tY5nK8sJ6xZtw&s",
-    alt: "Macallan 18",
-    titulo: "The Macallan 18 Años",
-    categoria: "Whisky",
-    descripcion: "Single malt escocés envejecido en barricas de jerez.",
-    descripcionLarga: "Un single malt escocés excepcional, madurado exclusivamente en barricas de roble sazonadas con jerez durante 18 años. Rica complejidad con notas de frutas secas, especias y chocolate.",
-    precio: "$680,000",
-    rating: 4.9,
-    reviews: 76
-  }
-]
+  // Añadir más productos en promoción del catálogo...
+])
 
-// Computed properties
+const searchQuery = ref('')
+const selectedCategory = ref('Todos')
+const sortBy = ref('name')
+const currentPage = ref(1)
+const itemsPerPage = ref(9)
+const showScrollToTop = ref(false)
+const cart = ref([])
+const showCartModal = ref(false)
+const selectedProduct = ref(null)
+const showNotification = ref(false)
+const notificationMessage = ref('')
+const isAuthenticated = ref(false)
+const userName = ref('')
+
+const categories = computed(() => {
+  const uniqueCategories = [...new Set(products.value.map(p => p.categoria))]
+  return ['Todos', ...uniqueCategories]
+})
+
 const filteredProducts = computed(() => {
-  let filtered = productos
+  let filtered = products.value
 
-  // Filtrar por categoría
-  if (selectedCategory.value !== 'Todos') {
-    filtered = filtered.filter(product => product.categoria === selectedCategory.value)
-  }
-
-  // Filtrar por búsqueda
+  // Filtro por búsqueda
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(product => 
@@ -567,197 +474,67 @@ const filteredProducts = computed(() => {
     )
   }
 
+  // Filtro por categoría
+  if (selectedCategory.value !== 'Todos') {
+    filtered = filtered.filter(product => product.categoria === selectedCategory.value)
+  }
+
   // Ordenar
-  if (sortBy.value === 'name') {
-    filtered.sort((a, b) => a.titulo.localeCompare(b.titulo))
-  } else if (sortBy.value === 'price') {
-    filtered.sort((a, b) => {
-      const priceA = parseInt(a.precio.replace(/[^\d]/g, ''))
-      const priceB = parseInt(b.precio.replace(/[^\d]/g, ''))
-      return priceA - priceB
-    })
-  } else if (sortBy.value === 'category') {
-    filtered.sort((a, b) => a.categoria.localeCompare(b.categoria))
+  switch (sortBy.value) {
+    case 'name':
+      filtered = filtered.sort((a, b) => a.titulo.localeCompare(b.titulo))
+      break
+    case 'price':
+      filtered = filtered.sort((a, b) => {
+        const priceA = parseInt(a.precio.replace(/[$,]/g, ''))
+        const priceB = parseInt(b.precio.replace(/[$,]/g, ''))
+        return priceA - priceB
+      })
+      break
+    case 'discount':
+      filtered = filtered.sort((a, b) => (b.descuento || 0) - (a.descuento || 0))
+      break
   }
 
   return filtered
 })
 
-const totalPages = computed(() => {
-  return Math.ceil(filteredProducts.value.length / itemsPerPage.value)
-})
-
-const startIndex = computed(() => {
-  return (currentPage.value - 1) * itemsPerPage.value
-})
+const totalPages = computed(() => Math.ceil(filteredProducts.value.length / itemsPerPage.value))
 
 const paginatedProducts = computed(() => {
-  const start = startIndex.value
-  const end = start + itemsPerPage.value
-  return filteredProducts.value.slice(start, end)
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  return filteredProducts.value.slice(start, start + itemsPerPage.value)
 })
+
+const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage.value)
 
 const visiblePages = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
-  const visible = []
-  
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) {
-      visible.push(i)
-    }
-  } else {
-    if (current <= 4) {
-      for (let i = 1; i <= 5; i++) {
-        visible.push(i)
-      }
-      if (total > 5) visible.push('...', total)
-    } else if (current >= total - 3) {
-      visible.push(1)
-      if (total > 6) visible.push('...')
-      for (let i = total - 4; i <= total; i++) {
-        visible.push(i)
-      }
-    } else {
-      visible.push(1, '...')
-      for (let i = current - 1; i <= current + 1; i++) {
-        visible.push(i)
-      }
-      visible.push('...', total)
-    }
+  const pages = []
+  const maxVisible = 5
+  const half = Math.floor(maxVisible / 2)
+  let start = Math.max(1, currentPage.value - half)
+  let end = Math.min(totalPages.value, start + maxVisible - 1)
+
+  if (end - start < maxVisible - 1) {
+    start = Math.max(1, end - maxVisible + 1)
   }
+
+  if (start > 1) pages.push(1)
+  if (start > 2) pages.push('...')
   
-  return visible
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  if (end < totalPages.value - 1) pages.push('...')
+  if (end < totalPages.value) pages.push(totalPages.value)
+
+  return pages
 })
 
-// Funciones principales
-function checkAuthStatus() {
-  if (typeof localStorage !== 'undefined') {
-    const token = localStorage.getItem('authToken')
-    const user = localStorage.getItem('user')
-    
-    if (token && user) {
-      isAuthenticated.value = true
-      const userData = JSON.parse(user)
-      userName.value = userData.name || userData.email || 'Usuario'
-    } else {
-      isAuthenticated.value = false
-      userName.value = ''
-    }
-  }
-}
-
-function logout() {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('user')
-  }
-  isAuthenticated.value = false
-  userName.value = ''
-  cart.value = []
-  router.push('/login')
-}
-
-function addToCart(product) {
-  cart.value.push(product)
-  showNotification(`${product.titulo} agregado al carrito!`)
-}
-
-function showNotification(message) {
-  const notification = document.createElement('div')
-  notification.textContent = message
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: linear-gradient(135deg, #FFD700, #FF4500);
-    color: #000;
-    padding: 1rem 1.5rem;
-    border-radius: 10px;
-    font-weight: bold;
-    z-index: 10000;
-    animation: slideIn 0.3s ease;
-  `
-  document.body.appendChild(notification)
-  setTimeout(() => {
-    if (document.body.contains(notification)) {
-      document.body.removeChild(notification)
-    }
-  }, 3000)
-}
-
-function removeFromCart(index) {
-  cart.value.splice(index, 1)
-}
-
-function toggleCartModal() {
-  showCartModal.value = !showCartModal.value
-}
-
-function closeCartModal() {
-  showCartModal.value = false
-}
-
-function showProductDetail(product) {
-  selectedProduct.value = product
-}
-
-function closeProductDetail() {
-  selectedProduct.value = null
-}
-
-function calculateTotal() {
-  const total = cart.value.reduce((sum, item) => {
-    const price = parseInt(item.precio.replace(/[^\d]/g, ''))
-    return sum + price
-  }, 0)
-  return `$${total.toLocaleString()}`
-}
-
-// Funciones de scroll mejoradas
-function scrollToProducts() {
-  if (productsSection.value) {
-    const elementTop = productsSection.value.offsetTop - 100 // Offset para navbar fijo
-    window.scrollTo({
-      top: elementTop,
-      behavior: 'smooth'
-    })
-  }
-}
-
-function scrollToFilters() {
-  if (filtersSection.value) {
-    const elementTop = filtersSection.value.offsetTop - 100
-    window.scrollTo({
-      top: elementTop,
-      behavior: 'smooth'
-    })
-  }
-}
-
-function scrollToTop() {
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  })
-}
-
-function handleScroll() {
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-  showScrollToTop.value = scrollTop > 500
-}
-
-// Funciones de paginación mejoradas
 function goToPage(page) {
-  if (page !== '...' && page >= 1 && page <= totalPages.value) {
+  if (page !== '...') {
     currentPage.value = page
-    scrollToProducts()
-  }
-}
-
-function nextPage() {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
     scrollToProducts()
   }
 }
@@ -765,6 +542,13 @@ function nextPage() {
 function previousPage() {
   if (currentPage.value > 1) {
     currentPage.value--
+    scrollToProducts()
+  }
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
     scrollToProducts()
   }
 }
@@ -779,63 +563,106 @@ function goToLastPage() {
   scrollToProducts()
 }
 
-// Funciones de navegación suave mejoradas
-function smoothScrollTo(targetId) {
-  const element = document.getElementById(targetId)
-  if (element) {
-    const elementTop = element.offsetTop - 80
-    window.scrollTo({
-      top: elementTop,
-      behavior: 'smooth'
-    })
+function scrollToProducts() {
+  nextTick(() => {
+    const section = this.$refs.productsSection
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' })
+    }
+  })
+}
+
+function scrollToFilters() {
+  nextTick(() => {
+    const section = this.$refs.filtersSection
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' })
+    }
+  })
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function checkScroll() {
+  showScrollToTop.value = window.scrollY > 300
+}
+
+function addToCart(product) {
+  if (!isAuthenticated.value) {
+    router.push('/login')
+    return
+  }
+  cart.value.push({ ...product })
+  showNotificationMessage('Producto agregado al carrito')
+}
+
+function removeFromCart(index) {
+  cart.value.splice(index, 1)
+}
+
+function toggleCartModal() {
+  showCartModal.value = !showCartModal.value
+}
+
+function closeCartModal() {
+  showCartModal.value = false
+}
+
+function calculateTotal() {
+  return cart.value.reduce((total, item) => {
+    return total + parseInt(item.precio.replace(/[$,]/g, '')) * item.quantity
+  }, 0).toLocaleString('es-CO')
+}
+
+function showProductDetail(product) {
+  selectedProduct.value = product
+}
+
+function closeProductDetail() {
+  selectedProduct.value = null
+}
+
+function showNotificationMessage(message) {
+  notificationMessage.value = message
+  showNotification.value = true
+  setTimeout(() => {
+    showNotification.value = false
+  }, 3000)
+}
+
+function checkAuth() {
+  const token = localStorage.getItem('authToken')
+  const user = localStorage.getItem('user')
+  isAuthenticated.value = !!token && !!user
+  if (user) {
+    const userData = JSON.parse(user)
+    userName.value = userData.name || userData.email
   }
 }
 
-// Watchers y lifecycle
-watch(() => route.path, () => {
-  checkAuthStatus()
-}, { immediate: true })
-
-// Watcher para resetear la página cuando cambien los filtros
-watch([searchQuery, selectedCategory, sortBy, itemsPerPage], () => {
-  currentPage.value = 1
-  nextTick(() => {
-    scrollToFilters()
-  })
-})
-
-// Watcher para manejar cambios de página
-watch(currentPage, (newPage, oldPage) => {
-  if (newPage !== oldPage) {
-    nextTick(() => {
-      scrollToProducts()
-    })
-  }
-})
+function logout() {
+  localStorage.removeItem('authToken')
+  localStorage.removeItem('user')
+  isAuthenticated.value = false
+  userName.value = ''
+  router.push('/login')
+}
 
 onMounted(() => {
-  checkAuthStatus()
-  window.addEventListener('scroll', handleScroll, { passive: true })
-  
-  // Mejorar el scroll para enlaces ancla
-  const anchorLinks = document.querySelectorAll('a[href^="#"]')
-  anchorLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault()
-      const targetId = link.getAttribute('href').slice(1)
-      smoothScrollTo(targetId)
-    })
-  })
+  checkAuth()
+  window.addEventListener('scroll', checkScroll)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('scroll', checkScroll)
 })
 </script>
 
 <style scoped>
-/* Estilos base heredados del layout principal */
-.catalog-page {
+/* Estilos similares a Catalogo.vue */
+.promotions-page {
   min-height: 100vh;
   background: 
     radial-gradient(circle at 20% 80%, rgba(255, 215, 0, 0.15) 0%, transparent 50%),
@@ -845,10 +672,9 @@ onUnmounted(() => {
   position: relative;
   overflow-x: hidden;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  overflow-y: auto;
-  max-height: 500px;
 }
 
+/* Background overlay (similar a home.vue) */
 .background-overlay {
   position: fixed;
   top: 0;
@@ -861,28 +687,14 @@ onUnmounted(() => {
   z-index: 1;
 }
 
-/* Transiciones para el botón de scroll */
-.fade-enter-active, .fade-leave-active {
-  transition: all 0.3s ease;
-}
-
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-  transform: translateY(20px) scale(0.8);
-}
-
-.fade-enter-to, .fade-leave-from {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-}
-
-/* Navbar con scroll suave */
+/* Navbar (similar a Catalogo.vue) */
 .navbar {
   background: rgba(20, 20, 20, 0.95);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 215, 0, 0.2);
   padding: 1.5rem 2rem;
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 100;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
@@ -901,134 +713,23 @@ onUnmounted(() => {
   font-weight: 900;
   margin: 0;
   letter-spacing: 3px;
-  text-shadow: 
-    0 0 20px rgba(255, 215, 0, 0.5),
-    0 0 40px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
   background: linear-gradient(135deg, #FFD700, #FF4500);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-decoration: none;
 }
 
-.nav-section {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-}
+/* ... (Mantener estilos de nav-links, user-menu, etc., idénticos a home.vue) */
 
-.nav-links {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.nav-link {
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.8rem 1.2rem;
-  border-radius: 25px;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.nav-link:hover {
-  color: #FFD700;
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
-}
-
-.nav-icon {
-  font-size: 1.1rem;
-  filter: drop-shadow(0 0 5px currentColor);
-}
-
-.user-menu {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.user-welcome {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #FFD700;
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 0.6rem 1rem;
-  background: rgba(255, 215, 0, 0.1);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
-}
-
-.logout-btn {
-  background: linear-gradient(135deg, #e53e3e, #c53030);
-  color: white;
-  border: none;
-  padding: 0.8rem 1.2rem;
-  border-radius: 25px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
-}
-
-.logout-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(229, 62, 62, 0.5);
-}
-
-.login-link {
-  color: rgba(255, 255, 255, 0.9) !important;
-  text-decoration: none;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.8rem 1.2rem;
-  border-radius: 25px;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 215, 0, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-}
-
-.login-link:hover {
-  color: #FFD700 !important;
-  background: rgba(255, 215, 0, 0.15);
-  border-color: rgba(255, 215, 0, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
-}
-
-.login-icon {
-  font-size: 1.1rem;
-  filter: drop-shadow(0 0 5px currentColor);
-}
-
-/* Header del catálogo */
-.catalog-header {
+/* Header de promociones */
+.promotions-header {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 69, 0, 0.1));
   padding: 6rem 2rem 4rem;
   text-align: center;
   position: relative;
-  z-index: 2;
-}
-
-.header-content {
-  max-width: 800px;
-  margin: 0 auto;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
 }
 
 .page-title {
@@ -1037,45 +738,45 @@ onUnmounted(() => {
   font-weight: 900;
   margin-bottom: 1rem;
   text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-  letter-spacing: 3px;
+  letter-spacing: 2px;
 }
 
 .page-subtitle {
   color: rgba(255, 255, 255, 0.8);
-  font-size: 1.3rem;
-  font-weight: 300;
+  font-size: 1.5rem;
   margin-bottom: 2rem;
+  font-weight: 300;
+  letter-spacing: 1px;
 }
 
 .title-underline {
   width: 150px;
-  height: 4px;
+  height: 5px;
   background: linear-gradient(90deg, #FFD700, #FF4500);
   margin: 0 auto;
   border-radius: 2px;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
 }
 
-/* Filtros con scroll mejorado */
+/* Filtros (similar a Catalogo.vue) */
 .filters-section {
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px);
   padding: 2rem;
-  position: relative;
-  z-index: 2;
-  scroll-margin-top: 100px; /* Para compensar navbar sticky */
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  scroll-margin-top: 0;
 }
 
 .filters-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 2fr 3fr 1fr;
-  gap: 2rem;
+  grid-template-columns: 1fr auto auto;
+  gap: 1.5rem;
   align-items: center;
-  background: rgba(20, 20, 20, 0.9);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .search-bar {
@@ -1084,24 +785,21 @@ onUnmounted(() => {
 
 .search-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 215, 0, 0.3);
-  border-radius: 25px;
   padding: 1rem 3rem 1rem 1.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 50px;
+  background: rgba(0, 0, 0, 0.4);
   color: white;
   font-size: 1rem;
   transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
 .search-input:focus {
   outline: none;
   border-color: #FFD700;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.search-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+  background: rgba(0, 0, 0, 0.6);
 }
 
 .search-icon {
@@ -1109,93 +807,188 @@ onUnmounted(() => {
   right: 1.5rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #FFD700;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 1.2rem;
-  pointer-events: none;
 }
 
+/* Filter buttons */
 .filter-buttons {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  justify-content: center;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: none;
+}
+
+.filter-buttons::-webkit-scrollbar {
+  display: none;
 }
 
 .filter-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: rgba(255, 215, 0, 0.1);
   color: rgba(255, 255, 255, 0.8);
-  padding: 0.7rem 1.2rem;
-  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  padding: 0.8rem 1.5rem;
+  border-radius: 50px;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .filter-btn:hover {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.5);
+  background: rgba(255, 215, 0, 0.2);
   color: #FFD700;
+  border-color: #FFD700;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
 .filter-btn.active {
   background: linear-gradient(135deg, #FFD700, #FF4500);
+  color: #1a1a1a;
   border-color: #FFD700;
-  color: #000000;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
 }
 
+/* Sort dropdown */
 .sort-dropdown {
-  display: flex;
-  justify-content: flex-end;
+  position: relative;
 }
 
 .sort-select {
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 215, 0, 0.3);
-  border-radius: 15px;
-  padding: 0.8rem 1.2rem;
+  padding: 1rem 2.5rem 1rem 1.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 50px;
+  background: rgba(0, 0, 0, 0.4);
   color: white;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  appearance: none;
   cursor: pointer;
   transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
 .sort-select:focus {
   outline: none;
   border-color: #FFD700;
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+  background: rgba(0, 0, 0, 0.6);
 }
 
-.sort-select option {
-  background: #2d2d2d;
-  color: white;
+.sort-dropdown::after {
+  content: '▼';
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  pointer-events: none;
 }
 
-/* Paginación mejorada */
+/* Paginación (similar a Catalogo.vue) */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 2rem 0;
+}
+
+.pagination-btn {
+  background: rgba(255, 215, 0, 0.1);
+  color: #FFD700;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #FFD700;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0 1rem;
+}
+
+.page-number {
+  background: rgba(255, 215, 0, 0.1);
+  color: #FFD700;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.page-number:hover:not(:disabled) {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #FFD700;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+.page-number.active {
+  background: linear-gradient(135deg, #FFD700, #FF4500);
+  color: #1a1a1a;
+  border-color: #FFD700;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.page-number:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Paginación info */
 .pagination-section {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(20, 20, 20, 0.95);
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  position: sticky;
+  top: calc(var(--navbar-height) + 1px); /* Ajustar según altura de navbar */
+  z-index: 98;
 }
 
 .pagination-info {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding: 1rem 2rem;
-  background: rgba(20, 20, 20, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 15px;
+  gap: 2rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
 }
 
 .results-info {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .items-per-page {
@@ -1205,177 +998,106 @@ onUnmounted(() => {
 }
 
 .items-per-page label {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.9rem;
-  font-weight: 600;
 }
 
 .items-select {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 215, 0, 0.1);
+  color: #FFD700;
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 8px;
-  padding: 0.5rem;
-  color: white;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.items-select:focus {
-  outline: none;
-  border-color: #FFD700;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-}
-
-.items-select option {
-  background: #2d2d2d;
-  color: white;
-}
-
-.pagination-controls {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 2rem;
-  padding: 2rem;
-  background: rgba(20, 20, 20, 0.8);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  padding: 0.5rem 1rem;
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-
-.pagination-bottom {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.pagination-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  color: rgba(255, 255, 255, 0.8);
-  width: 45px;
-  height: 45px;
-  border-radius: 12px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  font-size: 1.2rem;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: rgba(255, 215, 0, 0.2);
-  border-color: #FFD700;
-  color: #FFD700;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.page-numbers {
-  display: flex;
-  gap: 0.3rem;
-  margin: 0 1rem;
-}
-
-.page-number {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  color: rgba(255, 255, 255, 0.8);
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.95rem;
-  font-weight: 600;
   transition: all 0.3s ease;
 }
 
-.page-number:hover:not(:disabled) {
+.items-select:hover {
   background: rgba(255, 215, 0, 0.2);
   border-color: #FFD700;
-  color: #FFD700;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(255, 215, 0, 0.3);
 }
 
-.page-number.active {
+/* Botón de volver arriba */
+.scroll-to-top {
+  position: fixed;
+  bottom: 5rem;
+  right: 2rem;
   background: linear-gradient(135deg, #FFD700, #FF4500);
-  border-color: #FFD700;
-  color: #000000;
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
-  transform: translateY(-2px);
+  color: #1a1a1a;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  z-index: 99;
 }
 
-.page-number:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.scroll-to-top:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6);
 }
 
-/* Carrito flotante */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* Floating cart (similar a Catalogo.vue) */
 .floating-cart {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  z-index: 1000;
+  z-index: 99;
 }
 
 .cart-toggle {
   background: linear-gradient(135deg, #FFD700, #FF4500);
-  border: none;
-  border-radius: 50%;
+  color: #1a1a1a;
   width: 70px;
   height: 70px;
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
+  font-size: 1.8rem;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
   transition: all 0.3s ease;
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+  position: relative;
 }
 
 .cart-toggle:hover {
   transform: scale(1.1);
-  box-shadow: 0 8px 30px rgba(255, 215, 0, 0.6);
-}
-
-.cart-icon {
-  font-size: 1.8rem;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6);
 }
 
 .cart-count {
   position: absolute;
   top: -5px;
   right: -5px;
-  background: #e53e3e;
+  background: #FF4500;
   color: white;
-  border-radius: 50%;
-  width: 25px;
-  height: 25px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 0.8rem;
   font-weight: bold;
-  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.5);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  min-width: 25px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(255, 69, 0, 0.5);
 }
 
-/* Modal del carrito */
+/* Modal del carrito (similar a Catalogo.vue) */
 .cart-modal-overlay {
   position: fixed;
   top: 0;
@@ -1387,19 +1109,19 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 1000;
 }
 
 .cart-modal {
   background: rgba(20, 20, 20, 0.95);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 20px;
-  max-width: 500px;
   width: 90%;
+  max-width: 500px;
   max-height: 80vh;
-  overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .cart-header {
@@ -1412,18 +1134,15 @@ onUnmounted(() => {
 
 .cart-header h3 {
   color: #FFD700;
-  font-size: 1.5rem;
-  font-weight: 700;
   margin: 0;
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.5rem;
   cursor: pointer;
-  transition: color 0.3s ease;
 }
 
 .close-btn:hover {
@@ -1431,24 +1150,21 @@ onUnmounted(() => {
 }
 
 .cart-items {
-  max-height: 400px;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 40vh;
   overflow-y: auto;
-  padding: 1rem;
 }
 
 .cart-item {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
   background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
   border-radius: 10px;
-  margin-bottom: 0.5rem;
-  transition: all 0.3s ease;
-}
-
-.cart-item:hover {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .cart-item-image {
@@ -1464,106 +1180,91 @@ onUnmounted(() => {
 
 .cart-item-info h4 {
   color: #FFD700;
-  font-size: 1rem;
-  font-weight: 600;
   margin: 0 0 0.5rem 0;
+  font-size: 1rem;
 }
 
 .cart-item-info p {
   color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
   margin: 0;
+  font-size: 0.9rem;
 }
 
 .remove-item {
-  background: linear-gradient(135deg, #e53e3e, #c53030);
+  background: rgba(255, 69, 0, 0.2);
   border: none;
+  color: #FF4500;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  width: 35px;
-  height: 35px;
   cursor: pointer;
-  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.3s ease;
 }
 
 .remove-item:hover {
+  background: rgba(255, 69, 0, 0.4);
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.5);
 }
 
 .cart-footer {
   padding: 1.5rem 2rem;
   border-top: 1px solid rgba(255, 215, 0, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .cart-total {
   color: #FFD700;
-  font-size: 1.3rem;
   font-weight: 700;
-  margin-bottom: 1rem;
-  text-align: center;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  font-size: 1.1rem;
 }
 
 .checkout-btn {
   background: linear-gradient(135deg, #FFD700, #FF4500);
-  color: #000000;
+  color: #1a1a1a;
   border: none;
-  padding: 1rem 2rem;
+  padding: 0.8rem 1.5rem;
   border-radius: 25px;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: 700;
-  width: 100%;
   transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
 }
 
 .checkout-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
-/* Sección de productos con scroll mejorado */
+/* Productos grid (similar a Catalogo.vue) */
 .products-section {
-  padding: 3rem 2rem 5rem;
-  position: relative;
-  z-index: 2;
-  scroll-margin-top: 100px;
+  padding: 4rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .products-container {
-  max-width: 1400px;
-  margin: 0 auto;
+  position: relative;
 }
 
 .no-products {
   text-align: center;
   padding: 4rem 2rem;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(20, 20, 20, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 20px;
-  margin: 2rem 0;
-}
-
-.no-products h3 {
-  color: #FFD700;
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
 }
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 3rem;
-  transition: all 0.3s ease;
+  animation: fadeIn 1s ease-out;
 }
 
+/* Tarjeta de producto */
 .product-card {
   background: rgba(20, 20, 20, 0.95);
   backdrop-filter: blur(20px);
@@ -1572,9 +1273,9 @@ onUnmounted(() => {
   overflow: hidden;
   transition: all 0.4s ease;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  animation: fadeInUp 0.6s ease forwards;
+  animation: slideIn 0.5s ease-out forwards;
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateX(100%);
 }
 
 .product-card:hover {
@@ -1585,7 +1286,7 @@ onUnmounted(() => {
 
 .card-image-container {
   position: relative;
-  height: 280px;
+  height: 250px;
   overflow: hidden;
 }
 
@@ -1610,7 +1311,7 @@ onUnmounted(() => {
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: bold;
-  z-index: 3;
+  z-index: 2;
   box-shadow: 0 4px 12px rgba(229, 62, 62, 0.5);
 }
 
@@ -1620,59 +1321,45 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.3) 100%
-  );
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
 }
 
 .product-actions-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
   opacity: 0;
   transition: all 0.3s ease;
 }
 
 .product-card:hover .product-actions-overlay {
   opacity: 1;
+  bottom: 1.5rem;
 }
 
 .quick-view-btn {
-  background: rgba(255, 215, 0, 0.9);
-  color: #000000;
-  border: none;
-  padding: 1rem 1.5rem;
-  border-radius: 25px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
   cursor: pointer;
-  font-weight: 700;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  transition: all 0.3s ease;
   backdrop-filter: blur(10px);
 }
 
 .quick-view-btn:hover {
-  background: #FFD700;
+  background: rgba(255, 255, 255, 0.3);
   transform: scale(1.05);
-  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.5);
-}
-
-.product-info {
-  padding: 2rem;
 }
 
 .product-category {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
+  color: #FFD700;
+  font-size: 0.9rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -1681,7 +1368,7 @@ onUnmounted(() => {
 
 .product-title {
   color: #FFD700;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
   text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
@@ -1689,7 +1376,7 @@ onUnmounted(() => {
 
 .product-description {
   color: rgba(255, 255, 255, 0.8);
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.6;
   margin-bottom: 1.5rem;
 }
@@ -1707,54 +1394,59 @@ onUnmounted(() => {
 }
 
 .star {
-  font-size: 1rem;
-  filter: grayscale(100%);
-  transition: all 0.3s ease;
+  font-size: 1.2rem;
+  color: rgba(255, 215, 0, 0.3);
 }
 
 .star.filled {
-  filter: grayscale(0%);
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  color: #FFD700;
 }
 
 .rating-text {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
 }
 
-.product-actions {
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
-  padding-top: 1.5rem;
-}
-
+/* Precios */
 .price-display {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
 .original-price {
   color: rgba(255, 255, 255, 0.5);
-  font-size: 1rem;
+  font-size: 1.1rem;
   text-decoration: line-through;
 }
 
 .price-value {
   color: #FFD700;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 700;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
+.discount-tag {
+  background: linear-gradient(135deg, #e53e3e, #c53030);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.5);
+}
+
+/* Botón agregar al carrito */
 .add-to-cart-btn {
   background: linear-gradient(135deg, #FFD700, #FF4500);
-  color: #000000;
+  color: #1a1a1a;
   border: none;
   padding: 1rem 1.5rem;
   border-radius: 25px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -1764,21 +1456,20 @@ onUnmounted(() => {
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
 }
 
 .add-to-cart-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6);
   background: linear-gradient(135deg, #FF4500, #8B4513);
 }
 
-.login-prompt {
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
-  padding-top: 1.5rem;
-  text-align: center;
+.cart-icon {
+  font-size: 1rem;
 }
 
+/* Login prompt */
 .login-prompt-btn {
   background: rgba(255, 215, 0, 0.1);
   color: #FFD700;
@@ -1803,85 +1494,83 @@ onUnmounted(() => {
   box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
 }
 
-/* Modal de detalle del producto */
+.lock-icon {
+  font-size: 1rem;
+}
+
+/* Modal de detalle de producto */
 .product-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(15px);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
-  padding: 2rem;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
 }
 
 .product-modal {
   background: rgba(20, 20, 20, 0.95);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 25px;
-  max-width: 900px;
-  width: 100%;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 20px;
+  max-width: 800px;
+  width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  position: relative;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  padding: 2rem;
 }
 
 .modal-close {
   position: absolute;
   top: 1rem;
   right: 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 50%;
-  width: 45px;
-  height: 45px;
+  background: none;
+  border: none;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 1.5rem;
+  font-size: 2rem;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: all 0.3s ease;
-  z-index: 1;
 }
 
 .modal-close:hover {
-  background: rgba(255, 215, 0, 0.2);
-  border-color: #FFD700;
   color: #FFD700;
-  transform: scale(1.1);
+  transform: rotate(90deg);
 }
 
 .modal-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-  padding: 2rem;
+  gap: 2rem;
+}
+
+.modal-image {
+  position: relative;
+  overflow: hidden;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .modal-image img {
   width: 100%;
-  height: 400px;
+  height: 350px;
   object-fit: cover;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
 }
 
-.modal-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+.modal-image:hover img {
+  transform: scale(1.05);
 }
 
-.modal-info .product-category {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.9rem;
+.modal-category {
+  color: #FFD700;
+  font-size: 1rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -1890,36 +1579,34 @@ onUnmounted(() => {
 
 .modal-info h2 {
   color: #FFD700;
-  font-size: 2.2rem;
+  font-size: 2rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-}
-
-.modal-info .product-rating {
-  margin-bottom: 1.5rem;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
 }
 
 .modal-description {
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 1.1rem;
-  line-height: 1.7;
-  margin-bottom: 2rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
 }
 
-.modal-actions {
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
-  padding-top: 2rem;
-}
-
-.modal-price {
+.modal-rating {
   display: flex;
   align-items: center;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
-.modal-price .original-price {
+.modal-price {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.original-price {
   color: rgba(255, 255, 255, 0.5);
   font-size: 1.2rem;
   text-decoration: line-through;
@@ -1927,40 +1614,46 @@ onUnmounted(() => {
 
 .current-price {
   color: #FFD700;
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.discount-tag {
+  background: linear-gradient(135deg, #e53e3e, #c53030);
+  color: white;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.5);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 1rem;
 }
 
 .modal-add-to-cart {
   background: linear-gradient(135deg, #FFD700, #FF4500);
-  color: #000000;
+  color: #1a1a1a;
   border: none;
   padding: 1.2rem 2rem;
-  border-radius: 30px;
+  border-radius: 25px;
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.8rem;
-  width: 100%;
+  gap: 0.5rem;
   transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+  flex: 1;
+  justify-content: center;
 }
 
 .modal-add-to-cart:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 30px rgba(255, 215, 0, 0.6);
-}
-
-.modal-login-prompt {
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
-  padding-top: 2rem;
-  text-align: center;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
 .modal-login-btn {
@@ -1969,27 +1662,80 @@ onUnmounted(() => {
   text-decoration: none;
   padding: 1.2rem 2rem;
   border: 2px solid rgba(255, 215, 0, 0.3);
-  border-radius: 30px;
-  display: inline-flex;
+  border-radius: 25px;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.8rem;
+  gap: 0.5rem;
   font-weight: 700;
-  font-size: 1.1rem;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  flex: 1;
+  justify-content: center;
 }
 
 .modal-login-btn:hover {
   background: rgba(255, 215, 0, 0.2);
   border-color: #FFD700;
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
-/* Footer */
+/* Notificación (de home.vue) */
+.notification-slide-enter-active,
+.notification-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.notification-slide-enter-from,
+.notification-slide-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+  padding: 15px 25px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #e0e0e0;
+}
+
+.notification-icon {
+  font-size: 1.2rem;
+  color: #48bb78;
+}
+
+.notification-message {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: rgba(255, 215, 0, 0.7);
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.notification-close:hover {
+  color: #FFD700;
+}
+
+/* Footer (de home.vue) */
 .footer {
   background: rgba(10, 10, 10, 0.95);
   backdrop-filter: blur(20px);
@@ -2009,11 +1755,6 @@ onUnmounted(() => {
   background: linear-gradient(90deg, #FFD700, #FF4500, #8B4513, #FFD700);
   background-size: 400% 400%;
   animation: shimmer 3s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
 }
 
 .footer-content {
@@ -2083,62 +1824,6 @@ onUnmounted(() => {
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
 
-/* Animaciones personalizadas */
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeInUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Delay escalonado para las tarjetas */
-.product-card:nth-child(1) { animation-delay: 0.1s; }
-.product-card:nth-child(2) { animation-delay: 0.2s; }
-.product-card:nth-child(3) { animation-delay: 0.3s; }
-.product-card:nth-child(4) { animation-delay: 0.4s; }
-.product-card:nth-child(5) { animation-delay: 0.5s; }
-.product-card:nth-child(6) { animation-delay: 0.6s; }
-
-/* Scroll personalizado para modales */
-.cart-items::-webkit-scrollbar,
-.product-modal::-webkit-scrollbar {
-  width: 8px;
-}
-
-.cart-items::-webkit-scrollbar-track,
-.product-modal::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
-
-.cart-items::-webkit-scrollbar-thumb,
-.product-modal::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #FFD700, #FF4500);
-  border-radius: 4px;
-}
-
-.cart-items::-webkit-scrollbar-thumb:hover,
-.product-modal::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #FF4500, #8B4513);
-}
-
-/* Smooth scrolling mejorado */
-html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 100px;
-}
-
 /* Responsive Design */
 @media (max-width: 1200px) {
   .filters-container {
@@ -2165,8 +1850,6 @@ html {
 @media (max-width: 768px) {
   .navbar {
     padding: 1rem;
-    position: sticky;
-    top: 0;
   }
 
   .navbar-content {
@@ -2194,7 +1877,7 @@ html {
     width: 100%;
   }
 
-  .catalog-header {
+  .promotions-header {
     padding: 4rem 1rem 3rem;
   }
 
@@ -2273,8 +1956,6 @@ html {
   .products-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
-   
-    overflow-y: auto;
   }
 
   .floating-cart {
@@ -2337,8 +2018,6 @@ html {
 @media (max-width: 480px) {
   .navbar {
     padding: 0.8rem;
-    position: sticky;
-    top: 0;
   }
 
   .brand-title {
@@ -2350,7 +2029,7 @@ html {
     padding: 0.5rem 0.8rem;
   }
 
-  .catalog-header {
+  .promotions-header {
     padding: 3rem 1rem 2rem;
   }
 
@@ -2483,50 +2162,6 @@ html {
     width: 98%;
   }
 
-  .cart-header {
-    padding: 1rem 1.5rem;
-  }
-
-  .cart-header h3 {
-    font-size: 1.3rem;
-  }
-
-  .cart-item {
-    padding: 0.8rem;
-  }
-
-  .cart-item-image {
-    width: 50px;
-    height: 50px;
-  }
-
-  .cart-item-info h4 {
-    font-size: 0.9rem;
-  }
-
-  .cart-item-info p {
-    font-size: 0.8rem;
-  }
-
-  .remove-item {
-    width: 30px;
-    height: 30px;
-    font-size: 0.9rem;
-  }
-
-  .cart-footer {
-    padding: 1rem 1.5rem;
-  }
-
-  .cart-total {
-    font-size: 1.1rem;
-  }
-
-  .checkout-btn {
-    padding: 0.8rem 1.5rem;
-    font-size: 1rem;
-  }
-
   .product-modal {
     margin: 0.5rem;
     width: calc(100% - 1rem);
@@ -2552,10 +2187,6 @@ html {
 
   .modal-info h2 {
     font-size: 1.5rem;
-  }
-
-  .modal-description {
-    font-size: 1rem;
   }
 
   .current-price {
@@ -2643,5 +2274,61 @@ html {
 .modal-login-btn:hover::before,
 .checkout-btn:hover::before {
   left: 100%;
+}
+
+/* Notificación */
+.notification-slide-enter-active,
+.notification-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.notification-slide-enter-from,
+.notification-slide-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+  padding: 15px 25px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  z-index: 1001;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #e0e0e0;
+}
+
+.notification-icon {
+  font-size: 1.2rem;
+  color: #48bb78;
+}
+
+.notification-message {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  color: rgba(255, 215, 0, 0.7);
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.notification-close:hover {
+  color: #FFD700;
 }
 </style>

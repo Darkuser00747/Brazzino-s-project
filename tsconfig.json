@@ -10,10 +10,5 @@
       "@/*": ["./src/*"]
     },
     "allowJs": true
-  },
-  "references": [
-    {
-      "path": "./tsconfig.vite-config.json"
-    }
-  ]
+  }
 }
