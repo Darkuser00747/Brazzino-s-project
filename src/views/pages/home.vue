@@ -367,6 +367,68 @@
         </router-link>
       </div>
     </div>
+    <div id="cocktails-preview" class="catalog-section">
+  <div class="section-header">
+    <h2 class="section-title">🍹 Cócteles Destacados</h2>
+    <div class="title-underline"></div>
+  </div>
+  
+  <div class="products-grid">
+    <div class="product-card" v-for="(cocktail, index) in cocktails.slice(0, 3)" :key="'cocktail-' + index">
+      <div class="card-image-container">
+        <div v-if="hasDiscountAccess()" class="discount-badge">
+          {{ getDiscountText() }}
+        </div>
+        <img :src="cocktail.image" :alt="cocktail.name" class="product-image" />
+        <div class="image-overlay"></div>
+      </div>
+      
+      <div class="product-info">
+        <h3 class="product-title">{{ cocktail.name }}</h3>
+        <p class="product-description">{{ cocktail.description }}</p>
+        
+        <!-- Vista para usuarios NO autenticados -->
+        <div v-if="!isAuthenticated" class="login-prompt">
+          <router-link to="/login" class="login-prompt-btn">
+            <span class="lock-icon">🔒</span>
+            <span>Inicia sesión para ver precios</span>
+          </router-link>
+        </div>
+        
+        <!-- Vista para usuarios autenticados -->
+        <div v-else class="authenticated-user-view">
+          <div class="price-display">
+            <div v-if="userRole === 'vip'" class="discounted-price">
+              <span class="price-label">Precio VIP (15% dto):</span>
+              <span class="price-value vip">{{ getVipPrice(cocktail.price) }}</span>
+            </div>
+            <div v-else-if="userRole === 'premium'" class="discounted-price">
+              <span class="price-label">Precio Premium (25% dto):</span>
+              <span class="price-value premium">{{ getPremiumPrice(cocktail.price) }}</span>
+            </div>
+            <div v-else class="price-display">
+              <span class="price-label">Precio:</span>
+              <span class="price-value">${{ cocktail.price }}</span>
+            </div>
+          </div>
+          <div class="product-actions">
+            <button class="buy-now-btn" @click="buyNow(cocktail)">
+              <span class="buy-icon">⚡</span>
+              <span>Comprar Ahora</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="catalog-footer">
+    <router-link to="/catalogo#cocktails" class="view-catalog-btn">
+      <span class="catalog-icon">🍸</span>
+      <span>Ver Todos los Cócteles</span>
+    </router-link>
+  </div>
+</div>
 <!-- AGREGAR ESTA SECCIÓN DESPUÉS DEL CATÁLOGO Y ANTES DEL FOOTER -->
 <div id="politica" class="policy-section">
   <Transition name="policy-header" appear>
@@ -445,6 +507,7 @@
     </TransitionGroup>
   </div>
 </div>
+
 <!-- AGREGAR ESTA SECCIÓN DESPUÉS DE LA POLÍTICA Y ANTES DEL FOOTER -->
 <div id="terminos" class="terms-section">
   <Transition name="terms-header" appear>
@@ -638,6 +701,18 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+
+// Datos para cócteles (placeholder, ajusta según tu fuente de datos)
+const cocktails = ref([
+{ name: 'Margarita', description: 'Clásico cóctel con tequila', price: 15, image: 'data:image/jpeg;base64,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' },
+{ name: 'Mojito', description: 'Fresco cóctel con ron', price: 12, image: 'https://cdn.craft.cloud/224393fa-1975-4d80-9067-ada3cb5948ca/assets/detail_Skinny_Mojito_4_2022.jpg' },
+{ name: 'Piña Colada', description: 'Cóctel tropical', price: 18, image: 'https://www.recetasnestle.com.mx/sites/default/files/srh_recipes/5a06c9f3b2dcf287a154fab9a64de6a8.jpg' }
+]);
+
+
+// Fetch cocktails si vienen de API
+// cocktails.value = await fetchCocktails();
+
 // AGREGAR AL <script setup>
 // Función para scroll a política
 const scrollToPolicy = () => {
@@ -3739,5 +3814,54 @@ watch(isAuthPage, (newValue) => {
 .notification-slide-leave-to {
   opacity: 0;
   transform: translateY(20px);
+}
+#cocktails .search-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+#cocktails .search-bar input {
+  padding: 8px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  color: var(--text-color);
+  flex-grow: 1;
+}
+
+#cocktails .products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+#cocktails .product-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  padding: 10px;
+  text-align: center;
+  color: var(--text-color);
+}
+
+#cocktails .product-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+#cocktails .add-to-cart-btn {
+  padding: 5px 10px;
+  margin-right: 5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #2196F3;
+  color: var(--text-color);
+}
+
+#cocktails .add-to-cart-btn:hover {
+  background-color: #1976D2;
 }
 </style>
