@@ -177,6 +177,46 @@
           </div>
         </div>
       </div>
+      <!-- NUEVA SECCIÓN: Gestión de Cócteles -->
+<div id="cocktails" class="catalog-section">
+  <div class="section-header">
+    <h2 class="section-title">🍹 Gestión de Cócteles</h2>
+    <div class="title-underline"></div>
+  </div>
+  <div class="search-bar">
+    <input v-model="cocktailSearchQuery" placeholder="🔍 Buscar cócteles..." />
+    <button @click="openCocktailModal(null)" class="add-btn">➕ Agregar Cóctel</button>
+  </div>
+  <div class="products-grid">
+    <div v-for="(cocktail, index) in filteredCocktails" :key="index" class="product-card">
+      <img :src="cocktail.image" :alt="cocktail.name" class="product-image" />
+      <div class="product-info">
+        <h3>{{ cocktail.name }}</h3>
+        <p>{{ cocktail.description }}</p>
+        <p>Ingredientes: {{ cocktail.ingredients.join(', ') }}</p>
+        <p>Precio: ${{ cocktail.price }}</p>
+        <div class="admin-actions">
+          <button @click="openCocktailModal(cocktail)" class="edit-product-btn">✏️ Editar</button>
+          <button @click="deleteCocktail(index)" class="delete-btn">🗑️ Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PARA CÓCTELES (PEGA AL FINAL DEL TEMPLATE, ANTES DE </template>) -->
+<div v-if="showCocktailModal" class="modal-overlay" @click="showCocktailModal = false">
+  <div class="modal" @click.stop>
+    <h2>{{ isEditingCocktail ? 'Editar' : 'Agregar' }} Cóctel</h2>
+    <input v-model="currentCocktail.name" placeholder="Nombre" />
+    <textarea v-model="currentCocktail.description" placeholder="Descripción"></textarea>
+    <input v-model="currentCocktail.price" type="number" placeholder="Precio" />
+    <input v-model="currentCocktail.image" placeholder="URL Imagen" />
+    <input v-model="currentCocktail.ingredients" placeholder="Ingredientes (separados por coma)" />
+    <button @click="saveCocktail">Guardar</button>
+    <button @click="showCocktailModal = false">Cancelar</button>
+  </div>
+</div>
       <!-- Gestión de Categorías -->
 <div id="categories" class="catalog-section">
   <div class="section-header">
@@ -641,6 +681,71 @@ import { Chart, registerables } from 'chart.js';
 import draggable from 'vuedraggable';
 Chart.register(...registerables);
 
+const isLightMode = ref(false); // Sync with the panel's mode
+const cocktails = ref([]);
+const cocktailSearchQuery = ref('');
+const showCocktailModal = ref(false);
+const currentCocktail = ref({ name: '', description: '', price: '', ingredients: [], image: '' });
+const isEditingCocktail = ref(false);
+
+// Computed property for filtered cocktails
+const filteredCocktails = computed(() => {
+  let filtered = cocktails.value;
+  if (cocktailSearchQuery.value) {
+    filtered = filtered.filter(c => c.name.toLowerCase().includes(cocktailSearchQuery.value.toLowerCase()));
+  }
+  return filtered;
+});
+
+// Lifecycle hook to load data and sync mode
+onMounted(() => {
+  const savedCocktails = localStorage.getItem('cocktails');
+  if (savedCocktails) {
+    cocktails.value = JSON.parse(savedCocktails);
+  } else {
+    cocktails.value = [
+      { name: 'Margarita', description: 'Tequila y lima', price: 15, ingredients: ['Tequila', 'Lima'], image: 'https://via.placeholder.com/300?text=Margarita', stock: 999 },
+      { name: 'Mojito', description: 'Ron y menta', price: 12, ingredients: ['Ron', 'Menta'], image: 'https://via.placeholder.com/300?text=Mojito', stock: 999 }
+    ];
+    localStorage.setItem('cocktails', JSON.stringify(cocktails.value));
+  }
+  // Sync with any global mode state if exists (optional)
+});
+
+// Watch for mode changes to update localStorage or UI (optional sync)
+watch(isLightMode, (newMode) => {
+  document.body.classList.toggle('light-mode', newMode);
+  localStorage.setItem('themeMode', newMode ? 'light' : 'dark'); // Optional persistence
+});
+
+// Methods
+const openCocktailModal = (cocktail = null) => {
+  showCocktailModal.value = true;
+  currentCocktail.value = cocktail ? { ...cocktail } : { name: '', description: '', price: '', ingredients: [], image: '' };
+  isEditingCocktail.value = !!cocktail;
+};
+
+const saveCocktail = () => {
+  currentCocktail.value.ingredients = currentCocktail.value.ingredients.split(',').map(i => i.trim());
+  if (isEditingCocktail.value) {
+    const index = cocktails.value.findIndex(c => c.name === currentCocktail.value.name);
+    if (index > -1) cocktails.value[index] = { ...currentCocktail.value };
+  } else {
+    cocktails.value.push({ ...currentCocktail.value });
+  }
+  localStorage.setItem('cocktails', JSON.stringify(cocktails.value));
+  showCocktailModal.value = false;
+};
+
+const deleteCocktail = (index) => {
+  cocktails.value.splice(index, 1);
+  localStorage.setItem('cocktails', JSON.stringify(cocktails.value));
+};
+
+const toggleTheme = () => {
+  isLightMode.value = !isLightMode.value;
+};
+
 const showFilters = ref(false);
 const priceRange = ref({ min: 0, max: 1000000 });
 const isLoading = ref(false);
@@ -760,11 +865,6 @@ function initCharts() {
   });
 }
 
-const isLightMode = computed(() => !isDarkMode.value);
-
-function toggleTheme() {
-  isDarkMode.value = !isDarkMode.value;
-}
 
 watch(isDarkMode, () => {
   initCharts();
@@ -3310,6 +3410,196 @@ function showToast(message, type) {
 .order-details p {
   margin: 0.5rem 0; /* Reducido de 1rem a 0.5rem */
   font-size: 1rem; /* Ajustado para mejor legibilidad en tamaño reducido */
+}
+/* General theme variables */
+:root {
+  --bg-color: #1a1a1a;
+  --text-color: #ffffff;
+  --card-bg: #2c2c2c;
+  --input-bg: #333;
+  --input-border: #555;
+  --primary-btn-bg: #4CAF50;
+  --secondary-btn-bg: #f44336;
+  --hover-primary: #45a049;
+  --hover-secondary: #d32f2f;
+}
+
+[data-theme="light"] {
+  --bg-color: #f5f5f5;
+  --text-color: #333;
+  --card-bg: #ffffff;
+  --input-bg: #fff;
+  --input-border: #ccc;
+  --primary-btn-bg: #4CAF50;
+  --secondary-btn-bg: #f44336;
+  --hover-primary: #45a049;
+  --hover-secondary: #d32f2f;
+}
+
+/* Apply theme to body (controlled by watch) */
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: all 0.3s ease;
+}
+
+/* Cocktail Management Section */
+#cocktails .search-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+#cocktails .search-bar input {
+  padding: 8px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  color: var(--text-color);
+  flex-grow: 1;
+}
+
+#cocktails .add-btn {
+  padding: 8px 16px;
+  background-color: var(--primary-btn-bg);
+  color: var(--text-color);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#cocktails .add-btn:hover {
+  background-color: var(--hover-primary);
+}
+
+#cocktails .products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+#cocktails .product-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  padding: 10px;
+  text-align: center;
+  color: var(--text-color);
+}
+
+#cocktails .product-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+#cocktails .admin-actions {
+  margin-top: 10px;
+}
+
+#cocktails .edit-product-btn, #cocktails .delete-btn {
+  padding: 5px 10px;
+  margin-right: 5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#cocktails .edit-product-btn {
+  background-color: #2196F3;
+  color: var(--text-color);
+}
+
+#cocktails .edit-product-btn:hover {
+  background-color: #1976D2;
+}
+
+#cocktails .delete-btn {
+  background-color: var(--secondary-btn-bg);
+  color: var(--text-color);
+}
+
+#cocktails .delete-btn:hover {
+  background-color: var(--hover-secondary);
+}
+
+/* Modal Styling */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background-color: var(--card-bg);
+  padding: 20px;
+  border-radius: 8px; /* Rounded corners like cards */
+  width: 400px; /* Wider for better input visibility */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: var(--text-color);
+  text-align: left; /* Align left for form-like layout */
+}
+
+.modal h2 {
+  margin-bottom: 15px;
+  font-size: 1.5em;
+  border-bottom: 1px solid var(--input-border);
+  padding-bottom: 5px;
+}
+
+.modal input, .modal textarea {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  color: var(--text-color);
+  font-size: 1em;
+}
+
+.modal textarea {
+  height: 80px; /* Better for descriptions */
+  resize: vertical;
+}
+
+.modal button {
+  padding: 8px 16px;
+  margin: 0 5px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+.modal button:first-child {
+  background-color: var(--primary-btn-bg);
+  color: var(--text-color);
+}
+
+.modal button:first-child:hover {
+  background-color: var(--hover-primary);
+}
+
+.modal button:last-child {
+  background-color: var(--secondary-btn-bg);
+  color: var(--text-color);
+}
+
+.modal button:last-child:hover {
+  background-color: var(--hover-secondary);
+}
+
+/* Ensure smooth transitions */
+* {
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
 }
 </style>
 
